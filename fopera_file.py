@@ -2,7 +2,7 @@ from enum import Enum
 from time import sleep
 
 class Fopera_file:
-    latence = 2
+    latency = 0.01
 
     def __init__(self, path):
         self._path = path
@@ -16,7 +16,7 @@ class Fopera_file:
         #No data or same question (== no new question)
         while not s or s == self._last_question:
             with open(self._path, 'r') as f:
-                sleep(self.latence)
+                sleep(self.latency)
                 s = f.readline()
         self._last_question = s
         return s
@@ -32,6 +32,6 @@ class Fopera_file:
         s = self._f.readline()
 
         while (not s):
-            sleep(self.latence)
+            sleep(self.latency)
             s = self._f.readline()
         return s
