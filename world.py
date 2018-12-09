@@ -3,8 +3,18 @@ import re
 from fopera_file import Fopera_file
 from tile import Tile, Color
 from question import Question, Question_type
+from Agent import Agent
+
+debug = open('debug.txt', 'w')
 
 class World():
+    def add_input_for_ia(self, input_name):
+        self._ia.neural_network.add_input(input_name)
+        self._ia.neural_network.connect(input_name, '0')
+        self._ia.neural_network.connect(input_name, '1')
+        self._ia.neural_network.connect(input_name, '2')
+        self._ia.neural_network.connect(input_name, '3')
+
     def __init__(self, player_id):
         # Keep player id. Needed to find the player folder
         self._player_id = player_id;
@@ -17,6 +27,30 @@ class World():
         self._response_file = Fopera_file('{base}/reponses.txt'.format(base=player_id))
         # List of questions fetched from the file 'questions.txt'
         self._questions = []
+        self._ia = Agent(self._player_type, ['0', '1', '2', '3'])
+
+        self.add_input_for_ia('tour')
+        self.add_input_for_ia('shadow')
+        self.add_input_for_ia('is_phantom')
+
+        # An input for each player color
+        # rose = 1
+        # bleu = 2
+        # rouge = 3
+        # gris = 4
+        # marron = 5
+        # noir = 6
+        # violet = 7
+        # blanc = 8
+        self.add_input_for_ia('rose')
+        self.add_input_for_ia('bleu')
+        self.add_input_for_ia('rouge')
+        self.add_input_for_ia('gris')
+        self.add_input_for_ia('marron')
+        self.add_input_for_ia('noir')
+        self.add_input_for_ia('violet')
+        self.add_input_for_ia('blanc')
+        debug.write(self._ia.neural_network.dump(True))
 
     def retrieve_info(self):
         # Player 1 is the phantom.
@@ -59,24 +93,49 @@ class World():
         if len(self._questions) > 0:
             response = ''
             q = self._questions.pop()
-            if q._type is Question_type.TILE:
-                for t in self.choose_tile(q._question):
-                    print(t)
-                response = '3'
-            elif q._type is Question_type.POSITION:
-                for p in self.choose_position(q._question):
-                    print(p)
-                response = '2'
-            elif q._type is Question_type.SPELL_ACTIVATION:
-                response = '1'
-            elif q._type is Question_type.SPELL:
-                for data in q._spell.get_spell_data():
-                    print(data)
-                response = '0'
-            else:
-                print('KO: {0}'.format(q))
-                return
+            players_pos = {}
+            for t in self._tiles:
+                debug.write("Tile: {}\n".format(t))
+                players_pos[t._color] = int(t._pos)
+
+            # think with game state variables in an object
+            env = {
+                'is_phantom': self._player_id,
+                'rose': players_pos['rose'],
+                'bleu': players_pos['bleu'],
+                'rouge': players_pos['rouge'],
+                'gris': players_pos['gris'],
+                'marron': players_pos['marron'],
+                'noir': players_pos['noir'],
+                'violet': players_pos['violet'],
+                'blanc': players_pos['blanc'],
+                'tour': self._tour,
+                'shadow': self._shadow,
+            }
+            debug.write("Env is {}\n".format(env))
+            action, actions = self._ia.think(env)
+            debug.write("Action, actions: {} {}".format(action, actions))
+            response = action
+            # if q._type is Question_type.TILE:
+            #     for t in self.choose_tile(q._question):
+            #         print(t)
+            #     response = '3'
+            # elif q._type is Question_type.POSITION:
+            #     for p in self.choose_position(q._question):
+            #         print(p)
+            #     response = '2'
+            # elif q._type is Question_type.SPELL_ACTIVATION:
+            #     response = '1'
+            # elif q._type is Question_type.SPELL:
+            #     for data in q._spell.get_spell_data():
+            #         print(data)
+            #     response = '0'
+            # else:
+            #     print('KO: {0}'.format(q))
+            #     return
+
             self._response_file.write(response)
+            debug.write("Player {} played {}\n".format(self._player_type, response))
             print("{0} answer: {1}".format(self._player_type, response))
 
     @staticmethod

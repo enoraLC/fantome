@@ -28,7 +28,7 @@ class Fopera_file:
 
     def continuous_read(self):
         if self._f is None:
-            self._f = open(self._path, 'r')
+            self._f = open(self._path, 'r', encoding="ISO-8859-1")
         s = self._f.readline()
 
         while (not s):
