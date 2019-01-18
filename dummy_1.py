@@ -75,7 +75,7 @@ class World():
         for data in [tile.strip().split('-') for tile in line.split()]:
             self._tiles.append(Tile(data[0], data[1], data[2]))
 
-    def play(self):
+    def lancer(self):
         self.retrieve_info()
         while (True):
             self.read_question()
